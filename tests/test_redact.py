@@ -239,9 +239,33 @@ def test_partial_detection_email_only() -> None:
     assert set(mapping.values()) == {"a@b.com"}
 
 
+def test_types_accepts_enum_members_directly() -> None:
+    # The README documents passing PIIType members (not just .value).
+    r = PIIRedactor(types={PIIType.EMAIL, PIIType.PHONE_US})
+    redacted, _ = r.redact("a@b.com call 555-123-4567 and DE89370400440532013000")
+    assert "<EMAIL_0>" in redacted
+    assert "<PHONE_US_0>" in redacted
+    # IBAN was not enabled, so it stays untouched.
+    assert "DE89370400440532013000" in redacted
+
+
 def test_unknown_type_name_raises() -> None:
     with pytest.raises(ValueError):
         PIIRedactor(types={"NOT_A_TYPE"})
+
+
+# --- PIIType string behavior -------------------------------------------------
+
+
+def test_piitype_behaves_like_string() -> None:
+    # PIIType must keep StrEnum-like semantics so it works on Python 3.10
+    # (where enum.StrEnum is unavailable) without changing observable
+    # behavior: members are strings, str() yields the bare value, and the
+    # value matches the placeholder label.
+    assert PIIType.EMAIL == "EMAIL"
+    assert PIIType.EMAIL.value == "EMAIL"
+    assert str(PIIType.EMAIL) == "EMAIL"
+    assert isinstance(PIIType.EMAIL, str)
 
 
 # --- Edge cases --------------------------------------------------------------

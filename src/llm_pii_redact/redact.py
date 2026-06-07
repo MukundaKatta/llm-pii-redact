@@ -13,12 +13,18 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from enum import StrEnum
+from enum import Enum
 from re import Pattern
 
 
-class PIIType(StrEnum):
-    """Built-in PII categories the redactor knows about."""
+class PIIType(str, Enum):
+    """Built-in PII categories the redactor knows about.
+
+    Inherits from ``str`` so members compare and serialize as plain
+    strings. This mirrors ``enum.StrEnum`` while remaining importable on
+    Python 3.10, which the package's ``requires-python`` still supports
+    (``enum.StrEnum`` was only added in Python 3.11).
+    """
 
     EMAIL = "EMAIL"
     PHONE_US = "PHONE_US"
@@ -28,6 +34,12 @@ class PIIType(StrEnum):
     IP_V6 = "IP_V6"
     IBAN = "IBAN"
     URL = "URL"
+
+    def __str__(self) -> str:
+        # Match StrEnum: ``str(PIIType.EMAIL) == "EMAIL"`` rather than the
+        # default Enum repr ``"PIIType.EMAIL"``. This keeps passing enum
+        # members straight to ``PIIRedactor(types=...)`` working.
+        return self.value
 
 
 @dataclass(frozen=True)
